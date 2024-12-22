@@ -98,7 +98,7 @@ impl JsonFormatter {
     fn write_separator<W: Write>(&self, writer: &mut W) -> std::fmt::Result {
         write!(writer, ",")?;
         if !self.sameline {
-            write!(writer, "\n")?;
+            writeln!(writer)?;
         // Are double-negatives allowed in programming? There's not no spacing here.
         } else if self.spacing {
             write!(writer, " ")?;
@@ -204,7 +204,7 @@ fn write_string<W: Write>(writer: &mut W, value: &str) -> std::fmt::Result {
 fn write_array<W: Write>(writer: &mut W, array: &[Value], formatter: JsonFormatter) -> std::fmt::Result {
     write!(writer, "[")?;
     if !formatter.sameline {
-        write!(writer, "\n")?;
+        writeln!(writer)?;
     }
     let indented_formatter = formatter.indent();
     array.iter().enumerate().try_for_each(|(index, value)| {
@@ -219,7 +219,7 @@ fn write_array<W: Write>(writer: &mut W, array: &[Value], formatter: JsonFormatt
         Ok(())
     })?;
     if !formatter.sameline {
-        write!(writer, "\n")?;
+        writeln!(writer)?;
         write!(writer, "{}", formatter.indentation())?;
     }
     
@@ -229,7 +229,7 @@ fn write_array<W: Write>(writer: &mut W, array: &[Value], formatter: JsonFormatt
 fn write_object<W: Write>(writer: &mut W, object: &ValueMap, formatter: JsonFormatter) -> std::fmt::Result {
     write!(writer, "{{")?;
     if !formatter.sameline {
-        write!(writer, "\n")?;
+        writeln!(writer)?;
     }
     let indent = formatter.indent();
     object.iter().enumerate().try_for_each(|(index, (key, value))| {
@@ -250,7 +250,7 @@ fn write_object<W: Write>(writer: &mut W, object: &ValueMap, formatter: JsonForm
         Ok(())
     })?;
     if !formatter.sameline {
-        write!(writer, "\n")?;
+        writeln!(writer)?;
         write!(writer, "{}", formatter.indentation())?;
     }
     write!(writer, "}}")
