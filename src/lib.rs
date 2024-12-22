@@ -347,6 +347,7 @@ mod tests {
 
     use super::*;
     #[test]
+    #[allow(clippy::approx_constant, reason = "Floating point number needs to match the string content exactly.")]
     fn parse_number_test() -> Result<(), crate::error::ParseError> {
         let object = Value::from_str(r#"
             {
