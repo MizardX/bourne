@@ -305,6 +305,19 @@ impl Value {
             _ => 0,
         }
     }
+
+    /// Check if the [Value] is empty if it is one of the following variants:
+    /// * [Value::String]
+    /// * [Value::Array]
+    /// * [Value::Object]
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Value::String(string) => string.is_empty(),
+            Value::Array(array) => array.is_empty(),
+            Value::Object(object) => object.is_empty(),
+            _ => false,
+        }
+    }
 }
 
 impl<I: IndexOrKey> std::ops::Index<I> for Value {
