@@ -15,9 +15,9 @@ use crate::{
 
 impl std::fmt::Display for Number {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            &Number::Float(float) => write!(f, "{}", float),
-            &Number::Int(int) => write!(f, "{}", int),
+        match *self {
+            Number::Float(float) => write!(f, "{}", float),
+            Number::Int(int) => write!(f, "{}", int),
         }
     }
 }
@@ -34,9 +34,9 @@ impl std::fmt::Display for Indent {
         // SAFETY: Creation of valid utf-8 string from byte array of spaces/tabs.
         const SPACES: &str = unsafe { str::from_utf8_unchecked(&[b' '; 256]) };
         const TABS: &str = unsafe { str::from_utf8_unchecked(&[b'\t'; 256]) };
-        match self {
-            &Self::Spaces(count) => write!(f, "{}", &SPACES[..count as usize]),
-            &Self::Tabs(count) => write!(f, "{}", &TABS[..count as usize]),
+        match *self {
+            Self::Spaces(count) => write!(f, "{}", &SPACES[..count as usize]),
+            Self::Tabs(count) => write!(f, "{}", &TABS[..count as usize]),
         }
     }
 }
