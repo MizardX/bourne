@@ -50,7 +50,7 @@ impl Parse for Null {
 
 impl Parse for Value {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if let Ok(_) = input.parse::<Null>() {
+        if input.parse::<Null>().is_ok() {
             Ok(Value::Null)
         } else if let Ok(Array(array)) = input.parse::<Array>() {
             Ok(Value::Array(array))
