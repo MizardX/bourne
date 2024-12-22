@@ -32,8 +32,8 @@ impl std::fmt::Display for Indent {
     /// Writes an [Indent] to a [Formatter]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // SAFETY: Creation of valid utf-8 string from byte array of spaces/tabs.
-        const SPACES: &'static str = unsafe { str::from_utf8_unchecked(&[b' '; 256]) };
-        const TABS: &'static str = unsafe { str::from_utf8_unchecked(&[b'\t'; 256]) };
+        const SPACES: &str = unsafe { str::from_utf8_unchecked(&[b' '; 256]) };
+        const TABS: &str = unsafe { str::from_utf8_unchecked(&[b'\t'; 256]) };
         match self {
             &Self::Spaces(count) => write!(f, "{}", &SPACES[..count as usize]),
             &Self::Tabs(count) => write!(f, "{}", &TABS[..count as usize]),
