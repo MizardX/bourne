@@ -55,7 +55,7 @@ struct JsonFormatter {
 
 struct Indentation<'a>(&'a JsonFormatter);
 
-impl<'a> std::fmt::Display for Indentation<'a> {
+impl std::fmt::Display for Indentation<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for _ in 0..self.0.indent_level {
             write!(f, "{}", self.0.indent)?;
@@ -275,7 +275,7 @@ impl std::fmt::Display for Value {
 
 pub struct PrettyPrint<'a>(&'a Value, Indent, bool);
 
-impl<'a> std::fmt::Display for PrettyPrint<'a> {
+impl std::fmt::Display for PrettyPrint<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write_value(f, self.0, JsonFormatter::new(false, self.2, self.1))
     }
