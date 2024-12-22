@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
 
     /// Decrement the index by one.
     fn rewind(&mut self) {
-        self.index = self.index.checked_sub(1).unwrap_or(0);
+        self.index = self.index.saturating_sub(1);
     }
 
     /// Checks if the parser matches text at the current index.
