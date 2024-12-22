@@ -79,13 +79,13 @@ impl Parse for KeyValuePair {
 }
 
 impl Value {
-    fn to_tokenstream(self) -> proc_macro2::TokenStream {
+    fn to_tokenstream(&self) -> proc_macro2::TokenStream {
         use quote::quote;
         match self {
             Value::Null => quote!(bourne::Value::Null),
             Value::Object(object) => {
                 let capacity = object.len();
-                let inserts = object.into_iter().map(|KeyValuePair { key, value }| {
+                let inserts = object.iter().map(|KeyValuePair { key, value }| {
                     let value = value.to_tokenstream();
                     quote! { map.insert((#key).to_owned(), #value); }
                 }).collect::<Vec<_>>();
@@ -99,7 +99,7 @@ impl Value {
             },
             Value::Array(array) => {
                 let capacity = array.len();
-                let lines = array.into_iter().map(|value| {
+                let lines = array.iter().map(|value| {
                     let value = value.to_tokenstream();
                     quote!{ array.push(#value); }
                 }).collect::<Vec<_>>();
