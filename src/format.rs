@@ -74,7 +74,7 @@ impl JsonFormatter {
             sameline,
             spacing,
             indent,
-            indent_level: indent_level,
+            indent_level,
         }
     }
 
