@@ -426,10 +426,11 @@ impl<'a> Parser<'a> {
         loop {
             self.eat_whitespace();
             match self.peek() {
-                Some(b']') => {
+                Some(b']') if array.is_empty() => {
                     self.advance(1);
                     break;
                 }
+                Some(b']' | b',') => return Err(ParseError::UnexpectedCommaInArrayOrObject(self.index)),
                 Some(_) => {
                     array.push(self.parse_value()?);
                     self.eat_whitespace();
@@ -486,10 +487,11 @@ impl<'a> Parser<'a> {
                         None => return Err(ParseError::UnexpectedEOF),
                     }
                 }
-                Some(b'}') => {
+                Some(b'}') if map.is_empty() => {
                     self.next();
                     break;
                 }
+                Some(b'}' | b',') => return Err(ParseError::UnexpectedCommaInArrayOrObject(self.index)),
                 Some(_) => return Err(ParseError::InvalidCharacter(self.index)),
                 None => return Err(ParseError::UnexpectedEOF),
             }
