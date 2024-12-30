@@ -176,43 +176,182 @@ impl<'a> Parser<'a> {
     /// Parse a [Number].
     fn parse_number(&mut self) -> ParseResult<Number> {
         // Valid characters that can follow a number: '}', ']', ',', and whitespace.
-        let mut found_e = false;
-        let mut found_dot = false;
-        let mut found_num = false;
-        let start = self.index;
-        if let Some(b'-' | b'+') = self.peek() {
-            self.next();
+        // Pattern for parsing numbers:
+        // [+|-]?                   -> Optional sign (+ or -)
+        // ( 0 | [1-9] [0-9]* )     -> Integer part: either a single zero or a non-zero digit followed by any number of digits
+        // ( . [0-9]+ )?            -> Optional fractional part: a dot followed by one or more digits
+        // ( [e|E] [+|-]? [0-9]+ )? -> Optional exponent part: 'e' or 'E', optional sign, followed by one or more digits
+        enum State {
+            /// Before everything.
+            Start,
+            /// Inside the integer part.
+            AfterSign,
+            /// After a leading zero. No more digits may follow.
+            AfterZero,
+            /// Inside the intger part.
+            IntegerPart,
+            /// After the decimal point. Must have at least one digit.
+            AfterDecimalPoint,
+            /// Inside the fractional part.
+            FractionalPart,
+            /// After the exponent character. Must have at least one digit.
+            AfterExponent,
+            /// After the exponent sign.
+            AfterExponentSign,
+            /// Inside the exponent part.
+            ExponentPart,
         }
+        let mut is_integer = true;
+        let mut state = State::Start;
+        let start = self.index;
+        let mut end = self.index;
         while let Some((index, next)) = self.indexed_next() {
-            match next {
-                b'0'..=b'9' => found_num = true,
-                b'.' if found_num && !found_dot && !found_e => found_dot = true,
-                b'e' | b'E' if found_num && !found_e => {
-                    found_e = true;
-                    if matches!(self.peek(), Some(b'+' | b'-')) {
-                        self.advance(1);
+            match state {
+                State::Start => match next {
+                    b'+' | b'-' => {
+                        state = State::AfterSign;
+                    }
+                    b'0' => {
+                        state = State::AfterZero;
+                    }
+                    b'1'..=b'9' => {
+                        state = State::IntegerPart;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
                     }
                 },
-                b'}' | b']' | b',' => {
-                    self.rewind();
-                    break
+                State::AfterSign => match next {
+                    b'0' => {
+                        state = State::AfterZero;
+                    }
+                    b'1'..=b'9' => {
+                        state = State::IntegerPart;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
                 },
-                ws if ws.is_ascii_whitespace() => {
-                    self.rewind();
-                    break
+                State::AfterZero => match next {
+                    b'.' => {
+                        state = State::AfterDecimalPoint;
+                        is_integer = false;
+                    }
+                    b'e' | b'E' => {
+                        state = State::AfterExponent;
+                        is_integer = false;
+                    }
+                    b'}' | b']' | b',' => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    ws if ws.is_ascii_whitespace() => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
                 },
-                _ => return Err(ParseError::InvalidCharacter(index)),
+                State::IntegerPart => match next {
+                    b'0'..=b'9' => (),
+                    b'.' => {
+                        state = State::AfterDecimalPoint;
+                        is_integer = false;
+                    }
+                    b'e' | b'E' => {
+                        state = State::AfterExponent;
+                        is_integer = false;
+                    }
+                    b'}' | b']' | b',' => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    ws if ws.is_ascii_whitespace() => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
+                State::AfterDecimalPoint => match next {
+                    b'0'..=b'9' => {
+                        state = State::FractionalPart;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
+                State::FractionalPart => match next {
+                    b'0'..=b'9' => (),
+                    b'e' | b'E' => {
+                        state = State::AfterExponent;
+                    }
+                    b'}' | b']' | b',' => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    ws if ws.is_ascii_whitespace() => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
+                State::AfterExponent => match next {
+                    b'+' | b'-' => {
+                        state = State::AfterExponentSign;
+                    }
+                    b'0'..=b'9' => {
+                        state = State::ExponentPart;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
+                State::AfterExponentSign => match next {
+                    b'0'..=b'9' => {
+                        state = State::ExponentPart;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
+                State::ExponentPart => match next {
+                    b'0'..=b'9' => (),
+                    b'}' | b']' | b',' => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    ws if ws.is_ascii_whitespace() => {
+                        end = index;
+                        self.rewind();
+                        break;
+                    }
+                    _ => {
+                        return Err(ParseError::InvalidCharacter(index));
+                    }
+                },
             }
         }
-        if self.index - start != 0 {
-            if found_dot | found_e {
-                Ok(Number::Float(self.source[start..self.index].parse::<f64>()?))
-            } else {
-                Ok(Number::Int(self.source[start..self.index].parse::<i64>()?))
-            }
+        let number = &self.source[start..end];
+        if number.is_empty() {
+            return Err(ParseError::InvalidCharacter(self.index));
+        }
+        Ok(if is_integer {
+            Number::Int(number.parse::<i64>()?)
         } else {
-            Err(ParseError::InvalidCharacter(self.index))
-        }
+            Number::Float(number.parse::<f64>()?)
+        })
     }
 
     /// Parse a string between double quotes (`"`).
