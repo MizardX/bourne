@@ -2,7 +2,7 @@
 // Because they loved discovering ancient "bits" of history!
 use std::str::FromStr;
 
-use crate::{error::ParseError, Value, ValueMap, Number};
+use crate::{error::ParseError, Number, Value, ValueMap};
 
 /// Result returned from JSON parsing.
 pub type ParseResult<T> = Result<T, ParseError>;
@@ -77,10 +77,7 @@ struct Parser<'a> {
 impl<'a> Parser<'a> {
     /// Create a new [Parser] from a `source` string.
     fn new(source: &'a str) -> Self {
-        Self {
-            source,
-            index: 0,
-        }
+        Self { source, index: 0 }
     }
 
     /// Checks if the index is at the end of the stream.
@@ -355,7 +352,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse a string between double quotes (`"`).
-    /// 
+    ///
     /// The following characters must be escaped:  
     /// * `\u{0}`to `\u{1f}` (inclusive)
     /// * `\n` (newline)
@@ -367,16 +364,22 @@ impl<'a> Parser<'a> {
     /// * `/` (optional)
     /// * `\u{8}`
     /// * `\u{c}`
-    /// 
+    ///
     /// #### Example:
     /// ```json
     /// "Hello, world!"
     /// ```
     fn parse_string(&mut self) -> ParseResult<String> {
         match self.peek() {
-            Some(b'"') => { self.next(); }
-            Some(_) => { return Err(ParseError::InvalidCharacter(self.index)); }
-            None => { return Err(ParseError::UnexpectedEOF); }
+            Some(b'"') => {
+                self.next();
+            }
+            Some(_) => {
+                return Err(ParseError::InvalidCharacter(self.index));
+            }
+            None => {
+                return Err(ParseError::UnexpectedEOF);
+            }
         }
         let start = self.index;
         let string = loop {
@@ -385,9 +388,13 @@ impl<'a> Parser<'a> {
             };
             match next {
                 // Strings should not contain new-lines.
-                b'\n' | b'\r' => { return Err(ParseError::LineBreakWhileParsingString(index)); }
+                b'\n' | b'\r' => {
+                    return Err(ParseError::LineBreakWhileParsingString(index));
+                }
                 b'"' => break unescape_string(&self.source[start..index])?,
-                b'\\' => { self.advance(1); }
+                b'\\' => {
+                    self.advance(1);
+                }
                 _ => {}
             }
         };
@@ -440,7 +447,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse a JSON Object.
-    /// 
+    ///
     /// #### Example:
     /// ```json
     /// {
